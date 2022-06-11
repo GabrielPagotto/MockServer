@@ -1,0 +1,14 @@
+[
+    { 
+        "id": 1,
+        "name": "Motorcycles"
+    },
+    { 
+        "id": 2,
+        "name": "Cars"
+    },
+    { 
+        "id": 3,
+        "name": "Music"
+    }
+]

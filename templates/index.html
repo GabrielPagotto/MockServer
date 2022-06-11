@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Mock Server</title>
+    </head>
+    <body>
+        <h3>Availabel endpoints</h3>
+        {% for  available_endpoint in available_endpoints %}
+            <a href="{{available_endpoint.url}}">{{available_endpoint.url}}</a><br>
+        {% endfor %}
+    </body>
+</html>
