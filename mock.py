@@ -1,22 +1,41 @@
 import os, flask, json
 from fileinput import close
 
+class AvailableEndpoint:
+    def __init__(self, folder_path: str, file_path: str, url: str, filename: str):
+        self.folder_path = folder_path
+        self.file_path = file_path
+        self.url = url
+        self.filename = filename
+        self.callback_method_name = url + filename
+        
+
+    def get_json_callback(self) -> flask.Response:
+        os.chdir(self.folder_path)
+
+        with open(self.filename, 'r') as file_object:
+            json_string = file_object.read()
+            json_o = json.loads(json_string) 
+            close()       
+            return flask.jsonify(json_o)
+
+    def set_callback_name(self):
+        handler = self.get_json_callback
+        handler.__func__.__name__ = self.callback_method_name
+
 class MockServer:
     app = flask.Flask(__name__)
+    available_endpoints = list()
 
     def run(self):
-        self.set_mock_path()
-
-        print("\n ---------- AVAILABLE ENDPOINTS ---------- \n")
-        self.get_path()
-        print("\n ------------------------------------------\n")
-
+        self.load_available_endpoints(True)
+        self.set_paths_in_app()
         self.app.run()
 
-    def set_mock_path(self):
-        os.chdir('mocks')
- 
-    def get_path(self):
+    def load_available_endpoints(self, is_first_call = False):
+        if is_first_call:
+            os.chdir('mocks')
+
         dirs = os.listdir()
         DS_Store_file_name = ".DS_Store"
         contains_DS_Store = dirs.__contains__(DS_Store_file_name)
@@ -31,7 +50,7 @@ class MockServer:
                 try:
                     current_path = os.getcwd()
                     os.chdir(fd)
-                    self.get_path()            
+                    self.load_available_endpoints()            
                     os.chdir(current_path)
 
                 except:
@@ -42,21 +61,22 @@ class MockServer:
                         folder_path = os.getcwd()
                         file_path =  "{0}/{1}".format(folder_path.split("/mocks")[1], fd)
                         route_path = file_path.replace(".json", "/")
-                        print(route_path)
-                        callback = lambda : self.get_json_callback(folder_path, fd)
-                        callback.__name__ = route_path + fd
-                        self.app.add_url_rule(route_path, view_func=callback)
+                        available_endpoint = AvailableEndpoint(
+                            folder_path=folder_path,
+                            file_path=file_path,
+                            url=route_path,
+                            filename=fd)
+                        
+                        self.available_endpoints.append(available_endpoint)
 
                     elif is_html_file:
                         pass
 
-    def get_json_callback(self, fullpath, filename) -> flask.Response:
-        os.chdir(fullpath)
-        print(fullpath)
-        print(filename)
+    def set_paths_in_app(self):
+        for available_endpoint in self.available_endpoints:
+            available_endpoint: AvailableEndpoint
+            available_endpoint.set_callback_name()
 
-        with open(filename, 'r') as file_object:
-            json_string = file_object.read()
-            json_o = json.loads(json_string) 
-            close()       
-            return flask.jsonify(json_o)
+            self.app.add_url_rule(
+                available_endpoint.url, 
+                view_func=available_endpoint.get_json_callback)
